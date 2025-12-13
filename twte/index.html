@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- PWA 설정 -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1d9bf0">
+<link rel="apple-touch-icon" href="icon.png">
+    <title>트위터 인텐트 링크 생성기</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, #e0f2fe 0%, #bfdbfe 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            padding: 40px;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .icon {
+            width: 50px;
+            height: 50px;
+            background: #1d9bf0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        h1 {
+            font-size: 28px;
+            color: #1f2937;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #d1d5db;
+            border-radius: 10px;
+            font-size: 15px;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #1d9bf0;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            background: #1d9bf0;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background: #1a8cd8;
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 25px;
+            background: #f9fafb;
+            border-radius: 12px;
+            border: 2px solid #e5e7eb;
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .result-header h3 {
+            font-size: 18px;
+            color: #1f2937;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-copy {
+            background: #374151;
+            color: white;
+        }
+
+        .btn-copy:hover {
+            background: #1f2937;
+        }
+
+        .btn-copy.copied {
+            background: #10b981;
+        }
+
+        .btn-test {
+            background: #1d9bf0;
+            color: white;
+        }
+
+        .btn-test:hover {
+            background: #1a8cd8;
+        }
+
+        .link-box {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #374151;
+        }
+
+        .tips {
+            margin-top: 30px;
+            padding: 20px;
+            background: #dbeafe;
+            border-radius: 12px;
+            border: 1px solid #93c5fd;
+        }
+
+        .tips h4 {
+            color: #1e3a8a;
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .tips ul {
+            list-style: none;
+            color: #1e40af;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .tips li {
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .tips li:before {
+            content: "•";
+            position: absolute;
+            left: 5px;
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 25px;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .btn-small {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="icon">
+                <svg width="24" height="24" fill="white" viewBox="0 0 24 24">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+            </div>
+            <h1>트위터 인텐트 링크 생성기</h1>
+        </div>
+
+        <div class="form-group">
+            <label>트윗 내용 (엔터로 줄바꿈 가능)</label>
+            <textarea id="text" placeholder="여기에 트윗 내용을 입력하세요.
+엔터를 누르면 줄바꿈이 됩니다!"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>공유할 URL (선택사항)</label>
+            <input type="text" id="url" placeholder="https://example.com">
+        </div>
+
+        <div class="form-group">
+            <label>해시태그 (# 없이, 쉼표로 구분)</label>
+            <input type="text" id="hashtags" placeholder="뉴스, 정보, 트위터">
+        </div>
+
+        <button class="btn" onclick="generateLink()">링크 생성하기</button>
+
+        <div class="result" id="result">
+            <div class="result-header">
+                <h3>생성된 링크</h3>
+                <div class="button-group">
+                    <button class="btn-small btn-copy" id="copyBtn" onclick="copyLink()">
+                        <span id="copyIcon">📋</span>
+                        <span id="copyText">복사</span>
+                    </button>
+                    <button class="btn-small btn-test" onclick="testLink()">
+                        🔗 테스트
+                    </button>
+                </div>
+            </div>
+            <div class="link-box" id="linkBox"></div>
+        </div>
+
+        <div class="tips">
+            <h4>💡 사용 팁</h4>
+            <ul>
+                <li>트윗 내용에서 엔터를 누르면 실제 트윗에서도 줄바꿈이 적용됩니다</li>
+                <li>생성된 링크를 웹사이트, 블로그, 이메일 등에 삽입하세요</li>
+                <li>"테스트" 버튼으로 실제로 어떻게 보이는지 확인할 수 있습니다</li>
+                <li>이 HTML 파일을 저장해두고 언제든 사용하세요!</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let generatedLink = '';
+
+        function generateLink() {
+            const text = document.getElementById('text').value;
+            const url = document.getElementById('url').value;
+            const hashtags = document.getElementById('hashtags').value;
+
+            let intentUrl = 'https://twitter.com/intent/tweet?';
+            const params = [];
+
+            if (text.trim()) {
+                params.push('text=' + encodeURIComponent(text));
+            }
+            if (url.trim()) {
+                params.push('url=' + encodeURIComponent(url));
+            }
+            if (hashtags.trim()) {
+                params.push('hashtags=' + encodeURIComponent(hashtags));
+            }
+
+            intentUrl += params.join('&');
+            generatedLink = intentUrl;
+
+            document.getElementById('linkBox').textContent = intentUrl;
+            document.getElementById('result').classList.add('show');
+
+            // 복사 버튼 초기화
+            resetCopyButton();
+        }
+
+        function copyLink() {
+            navigator.clipboard.writeText(generatedLink).then(() => {
+                const btn = document.getElementById('copyBtn');
+                const icon = document.getElementById('copyIcon');
+                const text = document.getElementById('copyText');
+                
+                btn.classList.add('copied');
+                icon.textContent = '✓';
+                text.textContent = '복사됨!';
+
+                setTimeout(resetCopyButton, 2000);
+            });
+        }
+
+        function resetCopyButton() {
+            const btn = document.getElementById('copyBtn');
+            const icon = document.getElementById('copyIcon');
+            const text = document.getElementById('copyText');
+            
+            btn.classList.remove('copied');
+            icon.textContent = '📋';
+            text.textContent = '복사';
+        }
+
+        function testLink() {
+            if (generatedLink) {
+                window.open(generatedLink, '_blank');
+            }
+        }
+// 서비스 워커 등록
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js');
+    }
+
+    // 설치 프롬프트
+    let deferredPrompt;
+    
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        
+        // 설치 알림 표시
+        const installDiv = document.createElement('div');
+        installDiv.innerHTML = `
+            <div style="position: fixed; bottom: 20px; left: 20px; right: 20px; 
+                        background: #10b981; color: white; padding: 16px 20px; 
+                        border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                        display: flex; justify-content: space-between; align-items: center;
+                        z-index: 1000;">
+                <span>📱 앱으로 설치할 수 있어요!</span>
+                <button id="installBtn" style="background: white; color: #10b981; 
+                        border: none; padding: 10px 20px; border-radius: 8px; 
+                        font-weight: 600; cursor: pointer;">설치하기</button>
+            </div>
+        `;
+        document.body.appendChild(installDiv);
+        
+        document.getElementById('installBtn').addEventListener('click', async () => {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            deferredPrompt = null;
+            installDiv.remove();
+        });
+    });
+    </script>
+
+</body>
+</html>

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#1d9bf0">
-    <meta name="description" content="트위터 인텐트 링크를 쉽게 만들어주는 도구">
+    <meta name="description" content="트위터 인텐트 링크 도구">
     <title>트위터 링크 생성기</title>
     
     <style>
@@ -350,6 +350,13 @@
             <input type="text" id="hashtags" placeholder="뉴스, 정보, 트위터">
         </div>
 
+        <div class="form-group">
+            <label style="display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" id="shortenUrl" style="width: auto; margin: 0;">
+                <span>링크 단축하기 (짧은 URL 생성)</span>
+            </label>
+        </div>
+
         <button class="btn" onclick="generateLink()">링크 생성하기</button>
 
         <div class="result" id="result">
@@ -374,6 +381,7 @@
                 <li>트윗 내용에서 엔터를 누르면 실제 트윗에서도 줄바꿈이 적용됩니다</li>
                 <li>생성된 링크를 웹사이트, 블로그, 이메일 등에 삽입하세요</li>
                 <li>"테스트" 버튼으로 실제로 어떻게 보이는지 확인할 수 있습니다</li>
+                <li>링크 단축 기능으로 짧고 깔끔한 URL을 만들 수 있어요 (예: tinyurl.com/abc123)</li>
                 <li>앱으로 설치하면 오프라인에서도 사용 가능합니다</li>
             </ul>
         </div>
@@ -415,6 +423,7 @@
             const text = document.getElementById('text').value;
             const url = document.getElementById('url').value;
             const hashtags = document.getElementById('hashtags').value;
+            const shouldShorten = document.getElementById('shortenUrl').checked;
 
             let intentUrl = 'https://twitter.com/intent/tweet?';
             const params = [];
@@ -430,12 +439,41 @@
             }
 
             intentUrl += params.join('&');
-            generatedLink = intentUrl;
-
-            document.getElementById('linkBox').textContent = intentUrl;
-            document.getElementById('result').classList.add('show');
+            
+            if (shouldShorten) {
+                // URL 단축 서비스 사용
+                shortenUrl(intentUrl);
+            } else {
+                generatedLink = intentUrl;
+                displayResult(intentUrl);
+            }
 
             resetCopyButton();
+        }
+
+        // URL 단축 함수
+        async function shortenUrl(longUrl) {
+            try {
+                document.getElementById('linkBox').textContent = '단축 URL 생성 중...';
+                document.getElementById('result').classList.add('show');
+                
+                // TinyURL API 사용
+                const response = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`);
+                const shortUrl = await response.text();
+                
+                generatedLink = shortUrl;
+                displayResult(shortUrl);
+            } catch (error) {
+                console.error('URL 단축 실패:', error);
+                generatedLink = longUrl;
+                displayResult(longUrl + '\n\n⚠️ 단축 실패: 원본 URL을 표시합니다');
+            }
+        }
+
+        // 결과 표시 함수
+        function displayResult(url) {
+            document.getElementById('linkBox').textContent = url;
+            document.getElementById('result').classList.add('show');
         }
 
         // 링크 복사
@@ -508,7 +546,7 @@
             display: "standalone",
             background_color: "#ffffff",
             theme_color: "#1d9bf0",
-            description: "트위터 인텐트 링크를 쉽게 만드는 도구",
+            description: "트위터 인텐트 링크 도구",
             icons: [
                 {
                     src: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9IiMxZDliZjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE5MiIgaGVpZ2h0PSIxOTIiIGZpbGw9IiMxZDliZjAiIHJ4PSI0MCIvPjxwYXRoIGQ9Ik0xNDUuNiAzNi40aDQ5LjZsLTEwOC40IDEyMy45TDE5OCAyMDEuNmgtMzMuN2wtNzguMi0xMDIuMi03My40IDEwMi4ySDIuNWwxMTYtMTMyLjZMMi41IDM2LjRoNTEuNWw3MC43IDkzLjV6bS0xNy40IDI2LjNoMjcuNUw1My40IDYzLjhoLTI5LjZ6IiBmaWxsPSJ3aGl0ZSIvPjwvc3ZnPg==",
